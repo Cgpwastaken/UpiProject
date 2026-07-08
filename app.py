@@ -198,13 +198,13 @@ PAGE = r"""
     </div>
     <div class="field">
       <label for="note">Transaction Note</label>
-      <input type="text" id="note" value="hello test">
+      <input type="text" id="note" value="test">
     </div>
     <div class="field">
       <label>Rupees</label>
       <div class="slider-row">
-        <input type="range" id="rupees" min="1" max="10000" value="394">
-        <input type="number" id="rupeesNum" min="1" max="10000" value="394">
+        <input type="range" id="rupees" min="1" max="10000" value="500">
+        <input type="number" id="rupeesNum" min="1" max="10000" value="500">
       </div>
     </div>
     <div class="field">
