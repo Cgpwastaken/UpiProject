@@ -237,6 +237,50 @@ PAGE = r"""
   }
   .brand-logo svg { width: 18px; height: 18px; }
   .brand-name { font-size: 15px; font-weight: 700; letter-spacing: 0.2px; }
+  .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .auth-area { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px 5px 6px;
+    font-size: 13px;
+  }
+  .user-chip img { width: 26px; height: 26px; border-radius: 50%; }
+  .link-btn { background: none; border: none; color: var(--accent2); font-size: 12px; cursor: pointer; padding: 0; }
+  .nav-tabs { display: flex; gap: 16px; margin-bottom: 24px; }
+  .nav-tab {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px; font-weight: 600;
+    padding-bottom: 4px;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-tab.active { color: var(--text); border-bottom-color: var(--accent2); }
+  .save-hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .lib-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .lib-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .lib-card img { width: 100%; max-width: 180px; background: #fff; border-radius: 8px; padding: 6px; }
+  .lib-name { font-weight: 600; font-size: 14px; margin-top: 10px; }
+  .lib-amount { color: var(--accent); font-weight: 700; font-size: 15px; margin-top: 4px; }
+  .lib-meta { color: var(--muted); font-size: 12px; margin-top: 4px; word-break: break-word; }
+  .lib-actions { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+  .btn.small { padding: 6px 12px; font-size: 12px; margin-top: 0; }
+  .btn.danger { background: transparent; color: var(--error); border: 1px solid var(--error); }
+  .empty-lib { text-align: center; color: var(--muted); padding: 60px 20px; max-width: 960px; margin: 0 auto; font-size: 14px; }
   .footer-badge {
     position: fixed;
     left: 20px;
@@ -268,19 +312,33 @@ PAGE = r"""
 </head>
 <body>
 <div class="header">
-  <div class="brand">
-    <div class="brand-logo">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#0d1117"/>
-        <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#0d1117"/>
-        <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#0d1117"/>
-        <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#0d1117" fill-opacity="0.55"/>
-      </svg>
+  <div class="header-row">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#0d1117"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#0d1117"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#0d1117"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#0d1117" fill-opacity="0.55"/>
+        </svg>
+      </div>
+      <div class="brand-name">UPISave</div>
     </div>
-    <div class="brand-name">UPISave</div>
+    <div class="auth-area">
+      <div id="gsiBtn"></div>
+      <div class="user-chip" id="userChip" style="display:none">
+        <img id="userPic" alt="" referrerpolicy="no-referrer">
+        <span id="userName"></span>
+        <button class="link-btn" id="signOutBtn" type="button">Sign out</button>
+      </div>
+    </div>
   </div>
   <h1>UPI QR Generator</h1>
   <div class="sub">Generate a scannable UPI payment QR with live amount calculation</div>
+  <div class="nav-tabs">
+    <a class="nav-tab active" id="tabGen" href="#">Generator</a>
+    <a class="nav-tab" id="tabLib" href="#library" style="display:none">My Library</a>
+  </div>
 </div>
 <div class="layout">
   <div class="card form-card">
@@ -385,10 +443,17 @@ PAGE = r"""
         <div class="qr-actions">
           <button class="btn" id="downloadBtn" disabled>Download QR</button>
           <button class="btn secondary" id="shareBtn" disabled>Share</button>
+          <button class="btn secondary" id="saveBtn" disabled>Save</button>
         </div>
+        <div class="save-hint" id="saveHint">Sign in with Google to save QRs to your library.</div>
       </div>
     </div>
   </div>
+</div>
+
+<div id="libraryView" style="display:none">
+  <div class="lib-grid" id="libGrid"></div>
+  <div class="empty-lib" id="libEmpty" style="display:none"></div>
 </div>
 
 <div class="footer-badge">UPISave by <strong>Veer Aditya Mirza</strong></div>
@@ -552,6 +617,7 @@ PAGE = r"""
     $("downloadBtn").disabled = !on;
     $("shareBtn").disabled = !on;
     if (!on) {
+      $("saveBtn").disabled = true;
       $("qrImg").classList.remove("show");
       $("qrPlaceholder").style.display = "inline-flex";
       $("uriPreview").textContent = "—";
@@ -612,6 +678,7 @@ PAGE = r"""
         $("uriPreview").textContent = data.uri;
         $("downloadBtn").disabled = false;
         $("shareBtn").disabled = false;
+        syncSaveBtn();
       })
       .catch(function () {
         $("apiErr").textContent = "Could not reach server.";
@@ -666,11 +733,183 @@ PAGE = r"""
     } catch (e) { /* storage unavailable */ }
   }
 
+  // ---------- Google sign-in ----------
+  var GOOGLE_CLIENT_ID = "1060359730160-umr1mvsjoccn3sijmd76jfj47lgobaab.apps.googleusercontent.com";
+  var user = null;
+  try { user = JSON.parse(localStorage.getItem("upisave_user") || "null"); } catch (e) {}
+
+  window.gisLoaded = function () {
+    if (!window.google || !google.accounts) return;
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: onCredential
+    });
+    renderSignInButtons();
+  };
+
+  function renderSignInButtons() {
+    if (user || !window.google || !google.accounts) return;
+    google.accounts.id.renderButton($("gsiBtn"), { theme: "filled_black", size: "medium", shape: "pill" });
+    var libBtn = $("libSignIn");
+    if (libBtn) google.accounts.id.renderButton(libBtn, { theme: "filled_black", size: "large", shape: "pill" });
+  }
+
+  function onCredential(resp) {
+    try {
+      var payload = JSON.parse(atob(resp.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      user = { sub: payload.sub, name: payload.name || payload.email || "User", picture: payload.picture || "" };
+      localStorage.setItem("upisave_user", JSON.stringify(user));
+    } catch (e) { return; }
+    updateAuthUI();
+  }
+
+  $("signOutBtn").addEventListener("click", function () {
+    user = null;
+    localStorage.removeItem("upisave_user");
+    if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+    if (location.hash === "#library") location.hash = "";
+    updateAuthUI();
+    renderSignInButtons();
+  });
+
+  function updateAuthUI() {
+    var signedIn = !!user;
+    $("gsiBtn").style.display = signedIn ? "none" : "block";
+    $("userChip").style.display = signedIn ? "flex" : "none";
+    if (signedIn) {
+      $("userName").textContent = user.name;
+      $("userPic").style.display = user.picture ? "block" : "none";
+      if (user.picture) $("userPic").src = user.picture;
+    }
+    $("tabLib").style.display = signedIn ? "inline-block" : "none";
+    $("saveHint").style.display = signedIn ? "none" : "block";
+    syncSaveBtn();
+    route();
+  }
+
+  function syncSaveBtn() {
+    $("saveBtn").disabled = !(user && $("qrImg").classList.contains("show"));
+  }
+
+  // ---------- QR library (stored per Google account in this browser) ----------
+  function libKey() { return "upisave_library_" + user.sub; }
+  function getLib() {
+    try { return JSON.parse(localStorage.getItem(libKey()) || "[]"); } catch (e) { return []; }
+  }
+
+  $("saveBtn").addEventListener("click", function () {
+    if (!user || this.disabled) return;
+    var s = readState();
+    var items = getLib();
+    items.unshift({
+      id: String(Date.now()),
+      qr: $("qrImg").src,
+      uri: $("uriPreview").textContent,
+      payee: s.name,
+      amount: $("total").textContent,
+      note: s.note,
+      savedAt: new Date().toISOString()
+    });
+    try {
+      localStorage.setItem(libKey(), JSON.stringify(items));
+    } catch (e) {
+      $("apiErr").textContent = "Could not save — browser storage is full.";
+      return;
+    }
+    var btn = this;
+    btn.textContent = "Saved ✓";
+    setTimeout(function () { btn.textContent = "Save"; }, 1200);
+  });
+
+  function renderLibrary() {
+    var grid = $("libGrid"), empty = $("libEmpty");
+    grid.innerHTML = "";
+    if (!user) {
+      empty.style.display = "block";
+      empty.innerHTML = "";
+      var msg = document.createElement("div");
+      msg.textContent = "Sign in with Google to save and view your QR library.";
+      msg.style.marginBottom = "16px";
+      var btnHost = document.createElement("div");
+      btnHost.id = "libSignIn";
+      btnHost.style.display = "inline-block";
+      empty.appendChild(msg);
+      empty.appendChild(btnHost);
+      renderSignInButtons();
+      return;
+    }
+    var items = getLib();
+    if (!items.length) {
+      empty.style.display = "block";
+      empty.textContent = "No saved QRs yet — generate one and press Save.";
+      return;
+    }
+    empty.style.display = "none";
+    items.forEach(function (item) {
+      var card = document.createElement("div");
+      card.className = "lib-card";
+      var img = document.createElement("img");
+      img.src = item.qr;
+      img.alt = "Saved UPI QR";
+      var nm = document.createElement("div");
+      nm.className = "lib-name";
+      nm.textContent = item.payee || "(no payee name)";
+      var amt = document.createElement("div");
+      amt.className = "lib-amount";
+      amt.textContent = item.amount;
+      var meta = document.createElement("div");
+      meta.className = "lib-meta";
+      meta.textContent = (item.note ? item.note + " · " : "") +
+        new Date(item.savedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      var actions = document.createElement("div");
+      actions.className = "lib-actions";
+      var dl = document.createElement("button");
+      dl.className = "btn small";
+      dl.textContent = "Download";
+      dl.addEventListener("click", function () {
+        var a = document.createElement("a");
+        a.href = item.qr;
+        a.download = "upi-qr-" + item.id + ".png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+      var del = document.createElement("button");
+      del.className = "btn small danger";
+      del.textContent = "Delete";
+      del.addEventListener("click", function () {
+        var next = getLib().filter(function (x) { return x.id !== item.id; });
+        localStorage.setItem(libKey(), JSON.stringify(next));
+        renderLibrary();
+      });
+      actions.appendChild(dl);
+      actions.appendChild(del);
+      card.appendChild(img);
+      card.appendChild(nm);
+      card.appendChild(amt);
+      card.appendChild(meta);
+      card.appendChild(actions);
+      grid.appendChild(card);
+    });
+  }
+
+  function route() {
+    var onLib = location.hash === "#library";
+    document.querySelector(".layout").style.display = onLib ? "none" : "grid";
+    $("libraryView").style.display = onLib ? "block" : "none";
+    $("tabGen").classList.toggle("active", !onLib);
+    $("tabLib").classList.toggle("active", onLib);
+    if (onLib) renderLibrary();
+  }
+  window.addEventListener("hashchange", route);
+
   restoreDetails();
   syncAmountChips();
+  updateAuthUI();
   onChange();
 })();
 </script>
+<script src="https://accounts.google.com/gsi/client" onload="gisLoaded()" async defer></script>
 </body>
 </html>
 """
