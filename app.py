@@ -752,6 +752,16 @@ PAGE = r"""
     google.accounts.id.renderButton($("gsiBtn"), { theme: "filled_black", size: "medium", shape: "pill" });
     var libBtn = $("libSignIn");
     if (libBtn) google.accounts.id.renderButton(libBtn, { theme: "filled_black", size: "large", shape: "pill" });
+    // If Google refuses this origin, the button iframe collapses to 0x0 —
+    // surface that instead of showing nothing.
+    setTimeout(function () {
+      if (user) return;
+      var iframe = $("gsiBtn").querySelector("iframe");
+      if (iframe && iframe.getBoundingClientRect().width === 0) {
+        $("gsiBtn").textContent = "Sign-in unavailable: this site's address is not an authorized origin for the Google client ID.";
+        $("gsiBtn").style.cssText = "font-size:11px;color:var(--error);max-width:260px;";
+      }
+    }, 2500);
   }
 
   function onCredential(resp) {
