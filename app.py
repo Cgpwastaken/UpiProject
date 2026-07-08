@@ -177,6 +177,38 @@ PAGE = r"""
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
   .right-col > .card + .card { margin-top: 24px; }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .brand-logo {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .brand-logo svg { width: 18px; height: 18px; }
+  .brand-name { font-size: 15px; font-weight: 700; letter-spacing: 0.2px; }
+  .footer-badge {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    z-index: 10;
+  }
+  .footer-badge strong { color: var(--text); }
+  @media (max-width: 760px) {
+    .footer-badge { position: static; margin: 24px auto 0; width: fit-content; }
+  }
   @media (max-width: 760px) {
     .layout { grid-template-columns: 1fr; }
     /* Flatten right-col so all three cards become grid items, then reorder */
@@ -189,6 +221,17 @@ PAGE = r"""
 </head>
 <body>
 <div class="header">
+  <div class="brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" fill="#0d1117"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5" fill="#0d1117"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5" fill="#0d1117"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5" fill="#0d1117" fill-opacity="0.55"/>
+      </svg>
+    </div>
+    <div class="brand-name">UPISave</div>
+  </div>
   <h1>UPI QR Generator</h1>
   <div class="sub">Generate a scannable UPI payment QR with live amount calculation</div>
 </div>
@@ -264,6 +307,8 @@ PAGE = r"""
     </div>
   </div>
 </div>
+
+<div class="footer-badge">UPISave by <strong>Veer Aditya Mirza</strong></div>
 
 <script>
 (function () {
