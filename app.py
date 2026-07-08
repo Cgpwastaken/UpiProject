@@ -177,7 +177,14 @@ PAGE = r"""
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
   .right-col > .card + .card { margin-top: 24px; }
-  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    /* Flatten right-col so all three cards become grid items, then reorder */
+    .right-col { display: contents; }
+    .right-col > .card + .card { margin-top: 0; }
+    .qr-card { order: -1; }
+    .calc-card { order: 1; }
+  }
 </style>
 </head>
 <body>
@@ -186,7 +193,7 @@ PAGE = r"""
   <div class="sub">Generate a scannable UPI payment QR with live amount calculation</div>
 </div>
 <div class="layout">
-  <div class="card">
+  <div class="card form-card">
     <div class="field">
       <label for="vpa">UPI ID (VPA)</label>
       <input type="text" id="vpa" value="9884511462-6@okaxis" spellcheck="false">
@@ -215,13 +222,6 @@ PAGE = r"""
       </div>
     </div>
     <div class="field">
-      <label>Quantity</label>
-      <div class="slider-row">
-        <input type="range" id="quantity" min="1" max="50" value="1">
-        <input type="number" id="quantityNum" min="1" max="50" value="1">
-      </div>
-    </div>
-    <div class="field">
       <label>Tip %</label>
       <div class="slider-row">
         <input type="range" id="tip_pct" min="0" max="25" value="0">
@@ -242,7 +242,7 @@ PAGE = r"""
   </div>
 
   <div class="right-col">
-    <div class="card">
+    <div class="card calc-card">
       <div class="section-title">Calculation</div>
       <div class="breakdown">
         <div class="row"><span id="subLabel">Subtotal</span><span id="subtotal">₹0.00</span></div>
@@ -253,7 +253,7 @@ PAGE = r"""
       <div class="section-title" style="margin-top:18px;">UPI URI</div>
       <div class="uri-box" id="uriPreview">—</div>
     </div>
-    <div class="card">
+    <div class="card qr-card">
       <div class="section-title">QR Code</div>
       <div class="qr-wrap">
         <div class="qr-placeholder" id="qrPlaceholder">QR appears here</div>
@@ -271,7 +271,7 @@ PAGE = r"""
   var debounceTimer = null;
   var gst = 0;
 
-  var sliders = ["rupees", "paise", "quantity", "tip_pct"];
+  var sliders = ["rupees", "paise", "tip_pct"];
   var $ = function (id) { return document.getElementById(id); };
 
   function paintSlider(el) {
@@ -328,7 +328,6 @@ PAGE = r"""
       note: $("note").value.trim(),
       rupees: clamp($("rupeesNum").value, 1, 10000),
       paise: clamp($("paiseNum").value, 0, 99),
-      quantity: clamp($("quantityNum").value, 1, 50),
       tip_pct: clamp($("tip_pctNum").value, 0, 25),
       gst_pct: gst
     };
@@ -339,7 +338,7 @@ PAGE = r"""
   }
 
   function computeLocal(s) {
-    var subtotal = (s.rupees + s.paise / 100) * s.quantity;
+    var subtotal = s.rupees + s.paise / 100;
     var tipAmt = subtotal * s.tip_pct / 100;
     var gstAmt = (subtotal + tipAmt) * s.gst_pct / 100;
     var total = Math.round((subtotal + tipAmt + gstAmt) * 100) / 100;
@@ -349,7 +348,6 @@ PAGE = r"""
   function updatePreview() {
     var s = readState();
     var c = computeLocal(s);
-    $("subLabel").textContent = "Subtotal (" + fmt(s.rupees + s.paise / 100).slice(1) + " × " + s.quantity + ")";
     $("subtotal").textContent = fmt(c.subtotal);
     $("tipLabel").textContent = "Tip (" + s.tip_pct + "%)";
     $("tipAmt").textContent = fmt(c.tipAmt);
@@ -443,7 +441,6 @@ def generate():
     try:
         rupees = float(data.get("rupees", 0))
         paise = float(data.get("paise", 0))
-        quantity = float(data.get("quantity", 1))
         tip_pct = float(data.get("tip_pct", 0))
         gst_pct = float(data.get("gst_pct", 0))
     except (TypeError, ValueError):
@@ -452,7 +449,7 @@ def generate():
     if int(gst_pct) != gst_pct or int(gst_pct) not in GST_SLABS:
         return jsonify(error="GST must be one of 0, 5, 12, 18, 28."), 400
 
-    subtotal = (rupees + paise / 100) * quantity
+    subtotal = rupees + paise / 100
     tip_amt = subtotal * tip_pct / 100
     gst_amt = (subtotal + tip_amt) * gst_pct / 100
     total = round(subtotal + tip_amt + gst_amt, 2)
