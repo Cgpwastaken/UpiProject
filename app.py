@@ -194,7 +194,7 @@ PAGE = r"""
     </div>
     <div class="field">
       <label for="name">Payee Name</label>
-      <input type="text" id="name" value="Veer Aditya Mirza- MInor">
+      <input type="text" id="name" value="Veer Aditya Mirza">
     </div>
     <div class="field">
       <label for="note">Transaction Note</label>
@@ -203,8 +203,8 @@ PAGE = r"""
     <div class="field">
       <label>Rupees</label>
       <div class="slider-row">
-        <input type="range" id="rupees" min="1" max="10000" value="500">
-        <input type="number" id="rupeesNum" min="1" max="10000" value="500">
+        <input type="range" id="rupees" min="1" max="100000" value="500">
+        <input type="number" id="rupeesNum" min="1" max="100000" value="500">
       </div>
     </div>
     <div class="field">
